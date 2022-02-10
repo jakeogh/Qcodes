@@ -638,6 +638,57 @@ class MultiType(Validator[Any]):
         return '<MultiType: {}>'.format(', '.join(parts))
 
 
+class MultiTypeAnd(Validator[Any]):
+    """
+    Allow the union of several different validators.
+    For example, to validate numbers are within a float range
+    and a multiple of a float:
+    MultiTypeAnd(Numbers(min_value=2e-3, max_value=5e4), PermissiveMultiples(divisor=1e-3))
+    The resulting validator acts as a logical AND between the
+    different validators.
+
+    Raises:
+        TypeError: If no validators provided. Or if any of the provided
+            argument is not a valid validator.
+    """
+
+    def __init__(self, *validators: Validator[Any]) -> None:
+        if not validators:
+            raise TypeError('MultiTypeAnd needs at least one Validator')
+
+        for v in validators:
+            if not isinstance(v, Validator):
+                raise TypeError('each argument must be a Validator')
+
+            if v.is_numeric:
+                # if ANY of the contained validators is numeric,
+                # the MultiType is considered numeric too.
+                # this could cause problems if you want to sweep
+                # from a non-numeric to a numeric value, so we
+                # need to be careful about this in the sweep code
+                self.is_numeric = True
+
+        self._validators = tuple(validators)
+        self._valid_values = tuple(vval for v in self._validators
+                                   for vval in v._valid_values)
+
+    def validate(self, value: Any, context: str = '') -> None:
+        args: TList[str] = []
+        for v in self._validators:
+            try:
+                v.validate(value, context)
+                #return
+            except Exception as e:
+                # collect the args from failed validator so you can see why
+                # it failed
+                args = args + list(e.args)
+                raise ValueError(*args)
+
+    def __repr__(self) -> str:
+        parts = (repr(v)[1:-1] for v in self._validators)
+        return '<MultiTypeAnd: {}>'.format(', '.join(parts))
+
+
 class Arrays(Validator[np.ndarray]):
     """
     Validator for numerical numpy arrays of numeric types (int, float, complex).

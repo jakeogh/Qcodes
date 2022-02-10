@@ -14,7 +14,7 @@ to use. Normal text shows the container includes and uses of this object.
 -  Instrument: IPInstrument, VisaInstrument, MockInstrument
 
    -  **Parameter**
-   -  Validator: Anything, Strings, Numbers, Ints, Enum, MultiType
+   -  Validator: Anything, Strings, Numbers, Ints, Enum, MultiType, MultiTypeAnd
    -  **SweepValues**: SweepFixedValues, AdaptiveSweep
    -  Function
    -  Validator
